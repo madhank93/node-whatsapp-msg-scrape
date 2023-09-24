@@ -1,6 +1,7 @@
 import { test, chromium, expect, Route } from "@playwright/test";
 import conf from "./config.json";
 import fs from "fs";
+import path from "path";
 
 test.beforeEach(async ({ context }) => {
   await context.route(/(png|jpeg)$/, (route) => route.abort());
@@ -16,6 +17,8 @@ test("Whatsapp scrape", async () => {
   );
   const page = await browser.newPage();
   await page.goto("https://web.whatsapp.com/");
+  page.waitForLoadState("domcontentloaded");
+  page.waitForLoadState("networkidle");
   await page
     .locator("//span[@data-icon='alert-notification']")
     .waitFor({ state: "visible", timeout: 30000 });
@@ -25,10 +28,11 @@ test("Whatsapp scrape", async () => {
   const parsedMessagesWithGroups = new Map<String, String[]>();
 
   for (let grpCount = 0; grpCount < groups.length; grpCount++) {
-    await page.getByText(groups[grpCount], { exact: true }).click();
-    const chatBox = page.locator("//div[@data-tab='8']");
-    chatBox.focus();
     page.waitForLoadState("domcontentloaded");
+    page.waitForLoadState("networkidle");
+    await page.locator("//div[@id='pane-side']").focus();
+    await page.getByText(groups[grpCount], { exact: true }).click();
+    // page.waitForLoadState("domcontentloaded");
 
     if (
       await page.locator("//div[@aria-label='Scroll to bottom']").isVisible()
@@ -41,7 +45,7 @@ test("Whatsapp scrape", async () => {
     while (true) {
       page.waitForLoadState("domcontentloaded");
       page.waitForLoadState("networkidle");
-
+      await page.locator("//div[@data-tab='8']").focus();
       await page.keyboard.press("ArrowUp");
       const focusedElementText = await page.evaluate(
         () => document.activeElement!.textContent
@@ -54,15 +58,39 @@ test("Whatsapp scrape", async () => {
     parsedMessagesWithGroups.set(groups[grpCount], parsedMessages);
   }
 
+  const date = new Date();
+  const formattedTime = date
+    .toLocaleTimeString("en-US", {
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: true,
+    })
+    .replace(/ /g, "-");
+
   for (let [key, value] of parsedMessagesWithGroups) {
-    fs.writeFileSync("parsed.txt", `@@@@@@@@@@=${key}=@@@@@@@@@@ \n`, {
-      flag: "a",
-    });
+    fs.writeFileSync(
+      `${process.cwd()}/parsed_${formattedTime}.txt`,
+      `@@@@@@@@@@=${key}=@@@@@@@@@@ \n`,
+      {
+        flag: "a",
+      }
+    );
     value.forEach((msg) => {
-      fs.writeFileSync("parsed.txt", `${msg}`, { flag: "a" });
+      fs.writeFileSync(
+        `${process.cwd()}/parsed_${formattedTime}.txt`,
+        `${msg} \n`,
+        { flag: "a" }
+      );
     });
-    fs.writeFileSync("parsed.txt", `\n ${"===*===".repeat(6)} \n`, {
-      flag: "a",
-    });
+    fs.writeFileSync(
+      `${process.cwd()}/parsed_${formattedTime}.txt`,
+      `\n ${"===*===".repeat(6)} \n`,
+      {
+        flag: "a",
+      }
+    );
   }
 });

@@ -4,4 +4,4 @@ node_modules/
 /playwright/.cache/
 /C:*
 back*.ts
-parsed.txt
+parsed*.txt
