@@ -21,7 +21,7 @@ test("Whatsapp scrape", async () => {
   page.waitForLoadState("networkidle");
   await page
     .locator("//span[@data-icon='alert-notification']")
-    .waitFor({ state: "visible", timeout: 30000 });
+    .waitFor({ state: "visible" });
 
   const groups = conf.whatsapp_groups;
 
