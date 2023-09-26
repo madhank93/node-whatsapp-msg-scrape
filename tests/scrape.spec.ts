@@ -84,6 +84,11 @@ test("Whatsapp scrape", async () => {
         `${msg} \n`,
         { flag: "a" }
       );
+      fs.writeFileSync(
+        `${process.cwd()}/parsed_${formattedTime}.txt`,
+        `${"#########".repeat(10)}`,
+        { flag: "a" }
+      );
     });
     fs.writeFileSync(
       `${process.cwd()}/parsed_${formattedTime}.txt`,
